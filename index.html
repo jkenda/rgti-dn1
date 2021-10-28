@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Domača naloga RGTI1</title>
+        <style>
+            html, body {
+                height: 100%;
+                padding: 0; margin: 0;
+            }
+            .horizontal {
+                display: flex;
+            }
+            canvas {
+                border: 1px solid black;
+                cursor: grab;
+            }
+            textarea {
+                margin: 0;
+                width: 100%;
+                height: 600px;
+                border: 1px solid black;
+            }
+        </style>
+
+        <script type="module" src="./app.js"></script>
+    </head>
+
+    <body>
+        <div class="horizontal">
+            <canvas width="800px", height="600px"></canvas>
+            <textarea></textarea>
+        </div>
+        <div>
+            levi gumb: rotiraj model,
+            desni gumb: premakni model,
+            srednji gumb: rotiraj kamero,
+            kolešček: premikaj Z kamere.<br>
+            WASD: premikaj X in Y kamere
+        </div>
+    </body>
+</html>
