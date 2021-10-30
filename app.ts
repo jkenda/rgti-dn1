@@ -1,16 +1,17 @@
-import { SceneReader, Scene } from "./SceneReader"
-import { Matrix, vector } from "./Matrix"
-import { MatrixOperations as O } from "./Operations"
+import { SceneReader, Scene } from "./SceneReader.js"
+import { Matrix, vector } from "./Matrix.js"
+import { Operations as O } from "./Operations.js"
 
 const mulRot = {
     x: Math.PI / 800,
     y: Math.PI / 600
 }
 
-const mouse = {
-    btnFunction: {
-        rotModel: 2, rotCamera: 0, moveModel: 1
-    }
+const mouseBtn = {
+    rotModel: 2, rotCamera: 0, moveModel: 1
+}
+const keyboardKey = {
+    up: 'w', down: 's', left: 'a', right: 'd'
 }
 
 class Application {
@@ -101,7 +102,6 @@ class Application {
 
     rotateModel(x: number, y: number, z: number): void {
         const [aX, aY, aZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
-        console.log(this.c2wMatrix)
         this.scene.model.rotation[0] += aX
         this.scene.model.rotation[1] += aY
         this.scene.model.rotation[2] += aZ
@@ -199,14 +199,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!app.scene) return
         app.mouse.down = event.button
         switch (event.button) {
-            case mouse.btnFunction.rotModel:
+            case mouseBtn.rotModel:
                 canvas.style.cursor = "grabbing"
                 break
-            case mouse.btnFunction.rotCamera:
+            case mouseBtn.rotCamera:
                 canvas.requestPointerLock()
                 app.mouse.locked = true
                 break
-            case mouse.btnFunction.moveModel:
+            case mouseBtn.moveModel:
                 canvas.style.cursor = "move"
                 break
         }
@@ -218,13 +218,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const dy = event.movementY
 
         switch (app.mouse.down) {
-            case mouse.btnFunction.rotModel: // middle button
+            case mouseBtn.rotModel: // middle button
                 app.rotateModel(dy*mulRot.y, -dx*mulRot.x, 0)
                 break;
-            case mouse.btnFunction.rotCamera: // left buton
+            case mouseBtn.rotCamera: // left buton
                 app.rotateCamera(-dy*mulRot.y, dx*mulRot.x, 0)
                 break;
-            case mouse.btnFunction.moveModel: // right button
+            case mouseBtn.moveModel: // right button
                 app.moveModel(dx, dy, 0)
                 break;
         }
@@ -253,16 +253,16 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("keydown", (event) => {
         if (!app.scene) return
         switch (event.key) {
-            case "w":
+            case keyboardKey.down:
                 app.moveCamera(0, -10, 0)
                 break
-            case "s":
+            case keyboardKey.down:
                 app.moveCamera(0, 10, 0)
                 break
-            case "a":
+            case keyboardKey.left:
                 app.moveCamera(-10, 0, 0)
                 break
-            case "d":
+            case keyboardKey.right:
                 app.moveCamera(10, 0, 0)
                 break
         }
