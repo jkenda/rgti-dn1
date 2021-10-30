@@ -1,6 +1,6 @@
-import { SceneReader } from "./SceneReader.js"
-import { Matrix } from "./Matrix.js"
-import { Operations as O } from "./Operations.js"
+import { SceneReader, Scene } from "./SceneReader"
+import { Matrix, vector } from "./Matrix"
+import { MatrixOperations as O } from "./Operations"
 
 const mulRot = {
     x: Math.PI / 800,
@@ -14,12 +14,21 @@ const mouse = {
 }
 
 class Application {
+    mouse = { 
+        down: -1,
+        locked: false
+    }
+    scene: Scene
+    ctx: CanvasRenderingContext2D
+    textarea: HTMLTextAreaElement
+    mul_trans: number
 
-    constructor(canvas, textarea) {
-        this.mouse = { 
-            down: -1,
-            locked: false
-        }
+    mMatrix: Matrix
+    vMatrix: Matrix
+    pMatrix: Matrix
+    c2wMatrix: Matrix
+
+    constructor(canvas: HTMLCanvasElement, textarea: HTMLTextAreaElement) {
         this.ctx = canvas.getContext("2d")
         this.ctx.translate(400, 300)
         this.textarea = textarea
@@ -27,7 +36,7 @@ class Application {
     }
 
     // posodobi transformacijsko matriko modela
-    updateModelM() {
+    updateModelM(): void {
         console.time("mMatrix")
         const [sX, sY, sZ] = this.scene.model.scale
         const [aX, aY, aZ] = this.scene.model.rotation
@@ -44,7 +53,7 @@ class Application {
     }
 
     // posodobi transformacijsko matriko kamere
-    updateViewM() {
+    updateViewM(): void {
         console.time("vMatrix")
 
         const [aX, aY, aZ] = this.scene.camera.rotation
@@ -64,33 +73,33 @@ class Application {
         const translatei = Matrix.translate(dX, dY, dZ)
         this.c2wMatrix = O.mulMatrices(translatei, rotateZi, rotateYi, rotateXi)
 
-        const distance = O.dist(this.scene.camera.translation, this.scene.model.translation)
+        const distance = O.dist([...this.scene.camera.translation, 0], [...this.scene.model.translation, 0])
         this.mul_trans = distance * this.scene.camera.perspective
 
         console.timeEnd("vMatrix")
     }
 
     // posodobi projekcijsko matriko
-    updateProjectionM() {
+    updateProjectionM(): void {
         console.time("pMatrix")
         this.pMatrix = Matrix.perspective(this.scene.camera.perspective)
         console.timeEnd("pMatrix")
     }
 
     // posodobi objekt scene iz JSONa
-    updateJSON() {
+    updateJSON(): void {
         console.time("JSON")
         this.scene = SceneReader.readFromJson(this.textarea.value)
         console.timeEnd("JSON")
     }
 
-    update() {
+    update(): void {
         this.updateModelM()
         this.updateViewM()
         this.updateProjectionM()
     }
 
-    rotateModel(x, y, z) {
+    rotateModel(x: number, y: number, z: number): void {
         const [aX, aY, aZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
         console.log(this.c2wMatrix)
         this.scene.model.rotation[0] += aX
@@ -100,7 +109,7 @@ class Application {
         this.render()
     }
 
-    moveModel(x, y, z) {
+    moveModel(x: number, y: number, z: number): void {
         const [dX, dY, dZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
         this.scene.model.translation[0] += dX * this.mul_trans
         this.scene.model.translation[1] += dY * this.mul_trans
@@ -109,7 +118,7 @@ class Application {
         this.render()
     }
 
-    rotateCamera(x, y, z) {
+    rotateCamera(x: number, y: number, z: number): void {
         const [aX, aY, aZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
         this.scene.camera.rotation[0] += aX
         this.scene.camera.rotation[1] += aY
@@ -118,7 +127,7 @@ class Application {
         this.render()
     }
 
-    moveCamera(x, y, z) {
+    moveCamera(x: number, y: number, z: number): void {
         const [dX, dY, dZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
         this.scene.camera.translation[0] += dX * this.mul_trans
         this.scene.camera.translation[1] += dY * this.mul_trans
@@ -127,7 +136,7 @@ class Application {
         this.render()
     }
 
-    render() {
+    render(): void {
         console.time("transform")
         const mvpMatrix = O.mulMatrices(this.pMatrix, this.vMatrix, this.mMatrix)
         const vertices = this.scene.vertices.map(
@@ -166,11 +175,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const app = new Application(canvas, textarea)
     const cursor_style = canvas.style.cursor
 
-    canvas.requestPointerLock = canvas.requestPointerLock
-                             || canvas.mozRequestPointerLock;
-    document.exitPointerLock  = document.exitPointerLock
-                             || document.mozExitPointerLock;
-
+    canvas.requestPointerLock = canvas.requestPointerLock;
+    document.exitPointerLock  = document.exitPointerLock;
 
     if (app.scene) {
         app.update() 

@@ -1,19 +1,23 @@
+export type vector = [number, number, number, number]
+
 export class Matrix {
 
-    constructor(...m) {
-        this.m = new Array(16).fill(0)
+    m: number[]
+
+    constructor(...m: number[]) {
+        this.m = new Array<number>(16).fill(0)
         this.m.splice(0, m.length, ...m);
     }
 
-    toArray() {
+    toArray(): number[] {
         return [...this.m];
     }
 
-    toString() {
+    toString(): string {
         return `(${this.m.join(',')})`;
     }
     // get row /num/ of the matrix
-    row(num) {
+    row(num: number): vector {
         return [
             this.m[4 * num + 0],
             this.m[4 * num + 1],
@@ -23,7 +27,7 @@ export class Matrix {
     }
 
     // get column /num/ of the matrix
-    col(num) {
+    col(num: number): vector {
         return [
             this.m[ 0 + num],
             this.m[ 4 + num],
@@ -33,11 +37,11 @@ export class Matrix {
     }
 
     // get element (i, j) of the matrix
-    e(i, j) {
+    e(i: number, j: number): number {
         return this.m[4 * i + j]
     }
 
-    static identity() {
+    static identity(): Matrix {
         return new Matrix(
             1, 0, 0, 0,
             0, 1, 0, 0,
@@ -46,7 +50,7 @@ export class Matrix {
         )
     }
 
-    static transposed(...e) {
+    static transposed(...e: number[]): Matrix {
         return new Matrix(
             e[0], e[4], e[ 8], e[12],
             e[1], e[5], e[ 9], e[13],
@@ -55,7 +59,7 @@ export class Matrix {
           )
     }
 
-    static rotateX(angle) {
+    static rotateX(angle: number): Matrix {
         const s = Math.sin(angle)
         const c = Math.cos(angle)
         return new Matrix(
@@ -66,7 +70,7 @@ export class Matrix {
         )
     }
 
-    static rotateY(angle) {
+    static rotateY(angle: number): Matrix {
         const s = Math.sin(angle)
         const c = Math.cos(angle)
         return new Matrix(
@@ -77,7 +81,7 @@ export class Matrix {
         )
     }
 
-    static rotateZ(angle) {
+    static rotateZ(angle: number): Matrix {
         const s = Math.sin(angle)
         const c = Math.cos(angle)
         return new Matrix(
@@ -88,7 +92,7 @@ export class Matrix {
         )
     }
 
-    static translate(dx, dy, dz) {
+    static translate(dx: number, dy: number, dz: number): Matrix {
         return new Matrix(
             1, 0, 0, dx,
             0, 1, 0, dy,
@@ -97,7 +101,7 @@ export class Matrix {
         )
     }
 
-    static scale(sx, sy, sz) {
+    static scale(sx: number, sy: number, sz: number): Matrix {
         return new Matrix(
             sx, 0, 0, 0,
             0, sy, 0, 0,
@@ -107,7 +111,7 @@ export class Matrix {
     }
 
     // d = 1 / tan(a/2) | a = kot FOV
-    static perspective(d) {
+    static perspective(d: number): Matrix {
         return new Matrix(
             1, 0, 0, 0,
             0, 1, 0, 0,

@@ -1,15 +1,29 @@
+import { vector } from "./Matrix"
+
+export interface Scene {
+    vertices: vector[],
+    triangles: number[][],
+    camera: {
+        translation: [number, number, number],
+        rotation: [number, number, number],
+        perspective: number
+    },
+    model: {
+        translation: [number, number, number],
+        rotation: [number, number, number],
+        scale: [number, number, number]
+    }
+}
+
 export class SceneReader {
-    static readFromJson(json) {
+    static readFromJson(json: string): Scene {
         try {
             const data = JSON.parse(json)
 
-            const scene = {
-                vertices: [],
-                triangles: [],
-            }
+            let scene: Scene
 
-            const v = data.vertices
-            const t = data.indices
+            const v: number[] = data.vertices
+            const t: number[] = data.indices
             
             if (v.length % 3 != 0) return null
             if (t.length % 3 != 0) return null
