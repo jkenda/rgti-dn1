@@ -6,6 +6,14 @@ export class Operations {
         return x1*x2 + y1*y2 + z1*z2 + w1*w2;
     }
 
+    static length([x, y, z, ]) {
+        return Math.sqrt(this.dotProduct([x, y, z, 0], [x, y, z, 0]))
+    }
+
+    static dist([x1, y1, z1], [x2, y2, z2]) {
+        return this.length([x2-x1, y2-y1, z2-z1, 0])
+    }
+
     static mulMatrixVector(M, v) {
         return [
             this.dotProduct(M.row(0), v),
@@ -32,7 +40,7 @@ export class Operations {
         return [
             x / w,
             y / w,
-            z / w
+            z
         ]
     }
     

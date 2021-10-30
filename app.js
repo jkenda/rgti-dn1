@@ -2,9 +2,15 @@ import { SceneReader } from "./SceneReader.js"
 import { Matrix } from "./Matrix.js"
 import { Operations as O } from "./Operations.js"
 
-const mul_rot = {
+const mulRot = {
     x: Math.PI / 800,
     y: Math.PI / 600
+}
+
+const mouse = {
+    btnFunction: {
+        rotModel: 2, rotCamera: 0, moveModel: 1
+    }
 }
 
 class Application {
@@ -12,7 +18,8 @@ class Application {
     constructor(canvas, textarea) {
         this.mouse = { 
             down: -1,
-            prev: { x: 0, y: 0 } }
+            locked: false
+        }
         this.ctx = canvas.getContext("2d")
         this.ctx.translate(400, 300)
         this.textarea = textarea
@@ -31,7 +38,7 @@ class Application {
         const rotateY = Matrix.rotateY(aY)
         const rotateZ = Matrix.rotateZ(aZ)
         const translate = Matrix.translate(dX, dY, dZ)
-        
+
         this.mMatrix = O.mulMatrices(translate, rotateX, rotateY, rotateZ, scale)
         console.timeEnd("mMatrix")
     }
@@ -39,15 +46,27 @@ class Application {
     // posodobi transformacijsko matriko kamere
     updateViewM() {
         console.time("vMatrix")
+
         const [aX, aY, aZ] = this.scene.camera.rotation
         const [dX, dY, dZ] = this.scene.camera.translation
+        
+        // world to camera
         const rotateX = Matrix.rotateX(-aX)
         const rotateY = Matrix.rotateY(-aY)
         const rotateZ = Matrix.rotateZ(-aZ)
         const translate = Matrix.translate(-dX, -dY, -dZ)
-        
-        this.mul_trans = -this.scene.camera.translation[2] * this.scene.camera.perspective
         this.vMatrix = O.mulMatrices(rotateX, rotateY, rotateZ, translate)
+        
+        // camera to world
+        const rotateXi = Matrix.rotateX(aX)
+        const rotateYi = Matrix.rotateY(aY)
+        const rotateZi = Matrix.rotateZ(aZ)
+        const translatei = Matrix.translate(dX, dY, dZ)
+        this.c2wMatrix = O.mulMatrices(translatei, rotateZi, rotateYi, rotateXi)
+
+        const distance = O.dist(this.scene.camera.translation, this.scene.model.translation)
+        this.mul_trans = distance * this.scene.camera.perspective
+
         console.timeEnd("vMatrix")
     }
 
@@ -59,7 +78,7 @@ class Application {
     }
 
     // posodobi objekt scene iz JSONa
-    updateJSON(json) {
+    updateJSON() {
         console.time("JSON")
         this.scene = SceneReader.readFromJson(this.textarea.value)
         console.timeEnd("JSON")
@@ -72,33 +91,38 @@ class Application {
     }
 
     rotateModel(x, y, z) {
-        this.scene.model.rotation[0] += x
-        this.scene.model.rotation[1] += y
-        this.scene.model.rotation[2] += z
+        const [aX, aY, aZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
+        console.log(this.c2wMatrix)
+        this.scene.model.rotation[0] += aX
+        this.scene.model.rotation[1] += aY
+        this.scene.model.rotation[2] += aZ
+        this.updateModelM()
+        this.render()
+    }
+
+    moveModel(x, y, z) {
+        const [dX, dY, dZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
+        this.scene.model.translation[0] += dX * this.mul_trans
+        this.scene.model.translation[1] += dY * this.mul_trans
+        this.scene.model.translation[2] += dZ * this.mul_trans
         this.updateModelM()
         this.render()
     }
 
     rotateCamera(x, y, z) {
-        this.scene.camera.rotation[0] += x
-        this.scene.camera.rotation[1] += y
-        this.scene.camera.rotation[2] += z
+        const [aX, aY, aZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
+        this.scene.camera.rotation[0] += aX
+        this.scene.camera.rotation[1] += aY
+        this.scene.camera.rotation[2] += aZ
         this.updateViewM()
         this.render()
     }
 
-    moveModel(x, y, z) {
-        this.scene.model.translation[0] += x
-        this.scene.model.translation[1] += y
-        this.scene.model.translation[2] += z
-        this.updateModelM()
-        this.render()
-    }
-
     moveCamera(x, y, z) {
-        this.scene.camera.translation[0] += x
-        this.scene.camera.translation[1] += y
-        this.scene.camera.translation[2] += z
+        const [dX, dY, dZ] = O.mulMatrixVector(this.c2wMatrix, [x, y, z, 0])
+        this.scene.camera.translation[0] += dX * this.mul_trans
+        this.scene.camera.translation[1] += dY * this.mul_trans
+        this.scene.camera.translation[2] += dZ * this.mul_trans
         this.updateViewM()
         this.render()
     }
@@ -122,7 +146,7 @@ class Application {
             const [bX, bY, bZ] = vertices[b]
             const [cX, cY, cZ] = vertices[c]
 
-            if (aZ <= 0 || bZ <= 0 || cZ <= 0) return
+            if (aZ <= 0 && bZ <= 0 && cZ <= 0) return
             
             // nariši črte
             this.ctx.moveTo(aX, aY)
@@ -137,12 +161,16 @@ class Application {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    console.log((new Matrix(1, 2, 3)).toArray())
-
     const canvas = document.querySelector("canvas")
     const textarea = document.querySelector("textarea")
     const app = new Application(canvas, textarea)
     const cursor_style = canvas.style.cursor
+
+    canvas.requestPointerLock = canvas.requestPointerLock
+                             || canvas.mozRequestPointerLock;
+    document.exitPointerLock  = document.exitPointerLock
+                             || document.mozExitPointerLock;
+
 
     if (app.scene) {
         app.update() 
@@ -161,18 +189,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // premikanje modela z miško
     canvas.addEventListener("contextmenu", (event) =>  event.preventDefault())
     canvas.addEventListener("mousedown", (event) => {
-        if (!app.scene) return
         event.preventDefault()
-        app.mouse.prev = { x: event.clientX, y: event.clientY }
+        if (!app.scene) return
         app.mouse.down = event.button
         switch (event.button) {
-            case 0:
+            case mouse.btnFunction.rotModel:
                 canvas.style.cursor = "grabbing"
                 break
-            case 1:
-                canvas.style.cursor = "all-scroll"
+            case mouse.btnFunction.rotCamera:
+                canvas.requestPointerLock()
+                app.mouse.locked = true
                 break
-            case 2:
+            case mouse.btnFunction.moveModel:
                 canvas.style.cursor = "move"
                 break
         }
@@ -180,30 +208,28 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.addEventListener("mousemove", (event) => {
         if (app.mouse.down == -1) return
 
-        const curr = { x: event.clientX, y: event.clientY }
-        const prev = app.mouse.prev
-        const dx = curr.x - prev.x
-        const dy = curr.y - prev.y
-
-        const mul_trans = app.mul_trans
+        const dx = event.movementX
+        const dy = event.movementY
 
         switch (app.mouse.down) {
-            case 0: // left button
-                app.rotateModel(dy*mul_rot.y, -dx*mul_rot.x, 0)
+            case mouse.btnFunction.rotModel: // middle button
+                app.rotateModel(dy*mulRot.y, -dx*mulRot.x, 0)
                 break;
-            case 1: // muddle buton
-                app.rotateCamera(dy*mul_rot.y, -dx*mul_rot.x, 0)
+            case mouse.btnFunction.rotCamera: // left buton
+                app.rotateCamera(-dy*mulRot.y, dx*mulRot.x, 0)
                 break;
-            case 2: // right button
-                app.moveModel(dx*mul_trans, dy*mul_trans, 0)
+            case mouse.btnFunction.moveModel: // right button
+                app.moveModel(dx, dy, 0)
                 break;
         }
-
-        app.mouse.prev = curr
     })
     canvas.addEventListener("mouseup", () => {
         app.mouse.down = -1
         canvas.style.cursor = cursor_style
+        if (app.mouse.locked) {
+            document.exitPointerLock()
+            app.mouse.locked = false
+        }
     })
     canvas.addEventListener("wheel", (event) => {
         event.preventDefault()
@@ -212,8 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
         else
             canvas.style.cursor = "zoom-out"
 
-        const multiplier = -app.mul_trans
-        app.moveCamera(0, 0, event.deltaY * multiplier)
+        app.moveCamera(0, 0, -event.deltaY)
 
         setTimeout(() => { canvas.style.cursor = cursor_style }, 600)
     })
@@ -221,19 +246,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // premikanje modela s tipkovnico
     document.addEventListener("keydown", (event) => {
         if (!app.scene) return
-        const mul = app.mul_trans
         switch (event.key) {
             case "w":
-                app.moveCamera(0, -10*mul, 0)
+                app.moveCamera(0, -10, 0)
                 break
             case "s":
-                app.moveCamera(0, 10*mul, 0)
+                app.moveCamera(0, 10, 0)
                 break
             case "a":
-                app.moveCamera(-10*mul, 0, 0)
+                app.moveCamera(-10, 0, 0)
                 break
             case "d":
-                app.moveCamera(10*mul, 0, 0)
+                app.moveCamera(10, 0, 0)
                 break
         }
     })

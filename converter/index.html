@@ -48,7 +48,7 @@
             }
 
             for (const line of lines) {
-                const words = line.split(/\s+/)
+                const words = line.split(/\s+\//)
                 let [type, x] = words
                 if (type == "v") {
                     let [type, x, y, z] = words
