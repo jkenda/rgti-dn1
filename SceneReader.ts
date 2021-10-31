@@ -1,17 +1,17 @@
-import { vector } from "./Matrix.js"
+import { vec4, vec3 } from "./Matrix.js"
 
 export interface Scene {
-    vertices: vector[],
-    triangles: number[][],
+    vertices: vec4[],
+    triangles: vec3[],
     camera: {
-        translation: [number, number, number],
-        rotation: [number, number, number],
+        translation: vec3,
+        rotation: vec3,
         perspective: number
     },
     model: {
-        translation: [number, number, number],
-        rotation: [number, number, number],
-        scale: [number, number, number]
+        translation: vec3,
+        rotation: vec3,
+        scale: vec3
     }
 }
 
@@ -47,12 +47,12 @@ export class SceneReader {
             }
             
             for (let i = 0; i < t.length; i += 3) {
-                const triangle = t.slice(i, i+3)
-                scene.triangles.push(triangle)
+                const [a, b, c] = t.slice(i, i+3)
+                scene.triangles.push([a, b, c])
             }
 
-            scene.camera = data.camera
-            scene.model  = data.model
+            if ("camera" in data) scene.camera = data.camera
+            if ("model"  in data) scene.model  = data.model
             return scene
         }
         catch (error) {

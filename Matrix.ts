@@ -1,4 +1,5 @@
-export type vector = [number, number, number, number]
+export type vec4 = [number, number, number, number]
+export type vec3 = [number, number, number]
 
 export class Matrix {
 
@@ -13,7 +14,7 @@ export class Matrix {
     toString = () => `(${this.m.join(',')})`;
 
     // get row /num/ of the matrix
-    row = (num: number): vector => [
+    row = (num: number): vec4 => [
         this.m[4 * num + 0],
         this.m[4 * num + 1],
         this.m[4 * num + 2],
@@ -21,24 +22,23 @@ export class Matrix {
     ]
 
     // get column /num/ of the matrix
-    col = (num: number): vector => [
+    col = (num: number): vec4 => [
         this.m[ 0 + num],
         this.m[ 4 + num],
         this.m[ 8 + num],
         this.m[12 + num]
     ]
 
-    // get element (i, j) of the matrix
-    e = (i: number, j: number) => this.m[4 * i + j]
+    static transposed(...e: number[]) {
+        return new Matrix(
+            e[0], e[4], e[ 8], e[12],
+            e[1], e[5], e[ 9], e[13],
+            e[2], e[6], e[10], e[14],
+            e[3], e[7], e[11], e[15]
+        )
+    }
 
-    static transposed = (...e: number[]) => new Matrix(
-        e[0], e[4], e[ 8], e[12],
-        e[1], e[5], e[ 9], e[13],
-        e[2], e[6], e[10], e[14],
-        e[3], e[7], e[11], e[15]
-    )
-
-    static rotateX = (angle: number) => {
+    static rotateX(angle: number) {
         const s = Math.sin(angle)
         const c = Math.cos(angle)
         return new Matrix(
@@ -49,7 +49,7 @@ export class Matrix {
         )
     }
 
-    static rotateY = (angle: number) => {
+    static rotateY(angle: number) {
         const s = Math.sin(angle)
         const c = Math.cos(angle)
         return new Matrix(
@@ -60,7 +60,7 @@ export class Matrix {
         )
     }
 
-    static rotateZ = (angle: number) => {
+    static rotateZ(angle: number) {
         const s = Math.sin(angle)
         const c = Math.cos(angle)
         return new Matrix(
@@ -71,24 +71,30 @@ export class Matrix {
         )
     }
 
-    static translate = (dx: number, dy: number, dz: number) => new Matrix(
-        1, 0, 0, dx,
-        0, 1, 0, dy,
-        0, 0, 1, dz,
-        0, 0, 0, 1
-    )
+    static translate(dx: number, dy: number, dz: number) {
+        return new Matrix(
+            1, 0, 0, dx,
+            0, 1, 0, dy,
+            0, 0, 1, dz,
+            0, 0, 0, 1
+        )
+    }
 
-    static scale = (sx: number, sy: number, sz: number) => new Matrix(
-        sx, 0, 0, 0,
-        0, sy, 0, 0,
-        0, 0, sz, 0,
-        0, 0,  0, 1
-    )
+    static scale(sx: number, sy: number, sz: number) {
+        return new Matrix(
+            sx, 0, 0, 0,
+            0, sy, 0, 0,
+            0, 0, sz, 0,
+            0, 0,  0, 1
+        )
+    }
 
-    static perspective = (d: number) => new Matrix(
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, d, 0
-    )
+    static perspective(d: number) {
+        return new Matrix(
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, d, 0
+        )
+    }
 }
