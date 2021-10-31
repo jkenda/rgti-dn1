@@ -27,6 +27,6 @@ export class Operations {
     static mulMatrices = (...Ms: Matrix[]) =>
         Ms.reduce((prev, cur) => Operations.mulMatrixMatrix(prev, cur))
 
-    static divPersp = ([x, y, z, w]: vec4): vec4 => [x/w, y/w, z/w, 1]
+    static divPersp = ([x, y, z, w]: vec4): vec4 => [x/w, y/w, z, 1]
     
 }
